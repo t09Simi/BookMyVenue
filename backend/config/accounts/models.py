@@ -39,6 +39,14 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.email} has {self.role}"
     
+    
+class Amenity(models.Model):
+    name =  models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return f"{self.name}"
+
+      
 class Venue(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Draft'
@@ -53,6 +61,7 @@ class Venue(models.Model):
     name = models.CharField(max_length=50)
     location = models.CharField(max_length=255)
     description = models.TextField()
+    amenities = models.ManyToManyField(Amenity, blank=True, related_name="venues")
     capacity = models.PositiveIntegerField()
     price_per_hour = models.DecimalField(max_digits=8, decimal_places=2)
     status = models.CharField(
@@ -69,6 +78,7 @@ class Venue(models.Model):
     def __str__(self):
         return f"{self.name} in {self.location} has {self.price_per_hour} with {self.status}"
     
+    
 class Gallery(models.Model):
     venue = models.ForeignKey(Venue,
                               on_delete=models.CASCADE,
@@ -79,3 +89,5 @@ class Gallery(models.Model):
 
     def __str__(self):
         return f"Photo for {self.venue.name}"
+    
+
