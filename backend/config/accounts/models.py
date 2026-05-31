@@ -29,6 +29,7 @@ class User(AbstractUser):
         max_length=20,
         choices=Role.choices,
         default=Role.USER)
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = "email"
@@ -58,6 +59,7 @@ class Venue(models.Model):
     owner = models.ForeignKey(User, 
                               on_delete=models.PROTECT, 
                               related_name="owned_venues")
+    
     name = models.CharField(max_length=50)
     location = models.CharField(max_length=255)
     description = models.TextField()
@@ -69,11 +71,39 @@ class Venue(models.Model):
         choices = Status.choices,
         default = Status.DRAFT
     )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True) 
     approved_by = models.ForeignKey(User, null=True, blank=True,
                                     on_delete=models.SET_NULL,
                                     related_name="approved_venues")
+    
+    def can_submit(self):
+
+        if self.status != self.Status.DRAFT:
+            return False, f"Cannot submit a venue that is already {self.status}."
+
+        fields_to_check = ['name', 'description', 'location', 'capacity', 'price_per_hour']
+
+        for field in fields_to_check:
+            value = getattr(self, field)
+            if value is None or value == "":
+                return False, f"Missing required field: {field}"
+            
+        return True, "Ready for submission"
+    
+           
+    def submit(self):
+
+        is_valid, reason = self.can_submit()
+
+        if not is_valid:
+            raise ValueError(f"Cannot submit venue: {reason} ")
+        
+        self.status = self.Status.SUBMITTED
+
+        self.save(update_fields=["status", "updated_at"])
+
 
     def __str__(self):
         return f"{self.name} in {self.location} has {self.price_per_hour} with {self.status}"
