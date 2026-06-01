@@ -8,3 +8,11 @@ class VenueSerializer(serializers.ModelSerializer):
         model = Venue
         fields = ['id','name', 'description', 'location',
                   'amenities', 'capacity', 'price_per_hour']
+        
+class VenueRejectSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        max_length = 500,
+        required = True,
+        allow_blank = False,
+        trim_whitespace = True,
+    )

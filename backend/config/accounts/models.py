@@ -72,6 +72,8 @@ class Venue(models.Model):
         default = Status.DRAFT
     )
 
+    rejection_reason = models.TextField(blank=True, default="")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True) 
     approved_by = models.ForeignKey(User, null=True, blank=True,
@@ -104,6 +106,49 @@ class Venue(models.Model):
 
         self.save(update_fields=["status", "updated_at"])
 
+
+    # Admin approval for venues
+    def can_approve(self):
+
+        if self.status != self.Status.SUBMITTED:
+            return False, f"Can't approve a {self.status} status"
+
+        return True, "Approved successfully"
+    
+    def approve(self, admin_user):
+
+        is_valid, reason = self.can_approve()
+
+        if not is_valid:
+            raise ValueError(f"Cannot approve this venue {reason}")
+        
+        self.status = self.Status.ACCEPTED
+        self.approved_by = admin_user
+
+        self.save(update_fields=["status", "approved_by", "updated_at"])
+
+    # Reject with reason
+
+    def can_reject(self):
+
+        if self.status != self.Status.SUBMITTED:
+            return False, f"Can't reject a {self.status} status"
+
+        return True, "Rejected successfully"
+
+
+    def reject(self, admin_user, reason):
+
+        is_valid, info  = self.can_reject()
+
+        if not is_valid:
+            raise ValueError(f"Cannot reject this venue {info}")
+        
+        self.status = self.Status.REJECTED
+        self.approved_by = admin_user
+        self.rejection_reason = reason
+
+        self.save(update_fields=["status", "approved_by", "rejection_reason", "updated_at"])
 
     def __str__(self):
         return f"{self.name} in {self.location} has {self.price_per_hour} with {self.status}"
